@@ -10,7 +10,8 @@ import tkinter as tk
 import keyring
 import json
 import threading
-
+import os
+from urllib.parse import unquote
 
 def limpiar_ventana():
     """Elimina todos los widgets actuales"""
@@ -199,14 +200,13 @@ def crear_carpeta_selenium():
     password = json.loads(password_str)
 
     service = Service(executable_path="chromedriver.exe")
-    driver = webdriver.Chrome(service=service)
-
-    driver.set_window_position(-1000, 0)
-    driver.set_window_size(800, 600)
 
     options = Options()
     options.add_argument("--headless=new")  # Chrome oculto
     driver = webdriver.Chrome(service=service, options=options)
+
+    driver.set_window_position(-1000, 0)
+    driver.set_window_size(800, 600)
 
     driver.get("https://aules.edu.gva.es/fp/login/index.php?loginredirect=1")
 
@@ -228,16 +228,56 @@ def crear_carpeta_selenium():
         #print(name)
         course_list.append((name, link))
 
-    archivos = []
+    archivos_por_curso = []
     """Recorre cada curso"""
     for name, link in course_list:
+        archivos = []
         print("\nEntrando en:", name)
         driver.get(link)
         #para encontrar todas las secciones
-        secciones = driver.find_elements(By.CSS_SELECTOR, "h3.sectionname")
-        for seccion in secciones:
-            texto = seccion.text
-            print(texto)
+        secciones = driver.find_elements(By.CSS_SELECTOR, "h3.sectionname a")
+
+        links_secciones = [
+            a.get_attribute("href")
+            for a in secciones
+            if a.get_attribute("href")
+        ]
+
+        for link_seccion in links_secciones:
+            driver.get(link_seccion)
+            actividades = driver.find_elements(By.CSS_SELECTOR,"div.activityname a")
+
+            links_actividades = [
+                a.get_attribute("href")
+                for a in actividades
+                if a.get_attribute("href")
+            ]
+
+            for link_actividad in links_actividades:
+                ventana_original = driver.current_window_handle
+                url_original = driver.current_url
+
+                driver.get(link_actividad)
+
+                url = driver.current_url.lower()
+                if url.endswith(".pdf"):
+                    url = driver.current_url
+                    nombre_pdf = unquote(os.path.basename(url))
+                    archivos.append(nombre_pdf)
+                    print(nombre_pdf)
+
+                #comprueba si estoy en una pestaña/ventana diferente para retroceder
+                if driver.current_window_handle != ventana_original:
+                    driver.close()
+                    driver.switch_to.window(ventana_original)
+
+                #comprueba si la URL ha cambiado
+                elif url_original != driver.current_url:
+                    driver.back()
+
+                #comprueba si se esta descargando algo
+
+
         driver.get("https://aules.edu.gva.es/fp/my/")
 
 SERVICE = "app"
