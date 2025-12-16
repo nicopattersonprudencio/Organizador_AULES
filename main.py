@@ -194,12 +194,6 @@ def crear_carpeta():
         daemon=True
     ).start()
 
-def limpiar_nombre_archivo(nombre):
-    """
-    Elimina ' (n)' antes de la extensión
-    """
-    return re.sub(r"\s*\(\d+\)(?=\.)", "", nombre)
-
 def nombre_desde_headers(url, session):
     try:
         r = session.head(url, allow_redirects=True, timeout=5)
@@ -295,12 +289,11 @@ def crear_carpeta_selenium():
 
                 driver.get(link_actividad)
 
-                #detecta los headers de los archivos
+                #detecta los headers de los archivos que son actividades
                 nombre_archivo = nombre_desde_headers(link_actividad, session)
                 if nombre_archivo:
-                    nombre_limpio = limpiar_nombre_archivo(nombre_archivo)
-                    print(nombre_limpio)
-                    archivos.append(nombre_limpio)
+                    print(nombre_archivo)
+                    archivos.append(nombre_archivo)
 
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
