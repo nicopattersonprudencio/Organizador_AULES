@@ -12,6 +12,9 @@ import json
 import threading
 import os
 from urllib.parse import unquote
+import tempfile
+import time
+import re
 
 def limpiar_ventana():
     """Elimina todos los widgets actuales"""
@@ -193,15 +196,41 @@ def crear_carpeta():
         daemon=True
     ).start()
 
+def detectar_descarga_y_nombre(carpeta, timeout=3):
+    inicio = time.time()
+    while time.time() - inicio < timeout:
+        for archivo in os.listdir(carpeta):
+            if archivo.endswith(".crdownload"):
+                nombre_real = archivo.replace(".crdownload", "")
+                return nombre_real
+        time.sleep(0.05)
+    return None
+
+def limpiar_nombre_archivo(nombre):
+    """
+    Elimina ' (n)' antes de la extensión
+    """
+    return re.sub(r"\s*\(\d+\)(?=\.)", "", nombre)
+
 def crear_carpeta_selenium():
 
-    """cargar los datos"""
+    """carga los datos"""
     password_str = keyring.get_password(SERVICE, ACCOUNT)
     password = json.loads(password_str)
 
+    """inicializa el driver"""
+    download_dir = tempfile.mkdtemp()
+
     service = Service(executable_path="chromedriver.exe")
 
-    options = Options()
+    options = webdriver.ChromeOptions()
+    prefs = {
+        "download.default_directory": download_dir,
+        "download.prompt_for_download": False,
+        "download.directory_upgrade": True,
+        "safebrowsing.enabled": True
+    }
+    options.add_experimental_option("prefs", prefs)
     options.add_argument("--headless=new")  # Chrome oculto
     driver = webdriver.Chrome(service=service, options=options)
 
@@ -260,12 +289,12 @@ def crear_carpeta_selenium():
                 driver.get(link_actividad)
 
                 url = driver.current_url.lower()
-                if url.endswith(".pdf"):
+                if url.endswith(".pdf") or url.endswith(".doc"):
                     url = driver.current_url
-                    nombre_pdf = unquote(os.path.basename(url))
-                    archivos.append(nombre_pdf)
-                    print(nombre_pdf)
-
+                    nombre_archivo = unquote(os.path.basename(url))
+                    archivos.append(nombre_archivo)
+                    print(nombre_archivo)
+                nombre_archivo = detectar_descarga_y_nombre(download_dir)
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
                     driver.close()
@@ -276,8 +305,13 @@ def crear_carpeta_selenium():
                     driver.back()
 
                 #comprueba si se esta descargando algo
+                elif nombre_archivo:
+                    nombre_limpio = limpiar_nombre_archivo(nombre_archivo)
+                    print(nombre_limpio)
+                    archivos.append(nombre_limpio)
+                    driver.execute_script("window.stop();")
 
-
+        archivos_por_curso.append(archivos)
         driver.get("https://aules.edu.gva.es/fp/my/")
 
 SERVICE = "app"
