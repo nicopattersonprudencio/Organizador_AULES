@@ -83,7 +83,7 @@ def pedir_datos_usuario():
 def verificar_datos(usuario,contrasena):
     """actualiza la app"""
     limpiar_ventana()
-    mostrar_mensaje("Procesando...esto puede llevar un rato",False)
+    mostrar_mensaje("Verificando cuenta...",False)
 
     threading.Thread(
         target=verificar_datos_selenium,
@@ -187,7 +187,7 @@ def menu_principal():
 def crear_carpeta():
     """actualiza la app"""
     limpiar_ventana()
-    mostrar_mensaje("Procesando...esto puede llevar un rato", False)
+    mostrar_mensaje("Creando carpeta...", False)
 
     threading.Thread(
         target=crear_carpeta_selenium,
@@ -197,13 +197,24 @@ def crear_carpeta():
 def nombre_desde_headers(url, session):
     try:
         r = session.head(url, allow_redirects=True, timeout=5)
+
         cd = r.headers.get("Content-Disposition", "")
+        if not cd:
+            return None
+
         match = re.search(r'filename="?([^"]+)"?', cd)
-        if match:
-            return unquote(match.group(1))
+        if not match:
+            return None
+
+        nombre = match.group(1)
+
+        #CORRECCIÓN DE CODIFICACIÓN
+        nombre = nombre.encode("latin1").decode("utf-8")
+
+        return unquote(nombre)
+
     except Exception:
-        pass
-    return None
+        return None
 
 def crear_sesion_con_cookies(driver):
     session = requests.Session()
