@@ -299,12 +299,39 @@ def crear_carpeta_selenium():
                 url_original = driver.current_url
 
                 driver.get(link_actividad)
-
                 #detecta los headers de los archivos que son actividades
                 nombre_archivo = nombre_desde_headers(link_actividad, session)
                 if nombre_archivo:
                     print(nombre_archivo)
                     archivos.append(nombre_archivo)
+
+                #detectar algunos recursos de las actividades
+                recursos_1 = driver.find_elements(By.CSS_SELECTOR,"div.resourceworkaround a")
+                links_recursos = [
+                a.get_attribute("href")
+                for a in recursos_1
+                if a.get_attribute("href")
+                ]
+
+                for link_recurso in links_recursos:
+                    ventana_original_2 = driver.current_window_handle
+                    url_original_2 = driver.current_url
+
+                    driver.get(link_recurso)
+                    #detectar los headers de los recursos
+                    nombre_archivo = nombre_desde_headers(link_recurso, session)
+                    if nombre_archivo:
+                        print(nombre_archivo)
+                        archivos.append(nombre_archivo)
+
+                    #comprueba si estoy en una pestaña/ventana diferente para retroceder
+                    if driver.current_window_handle != ventana_original_2:
+                        driver.close()
+                        driver.switch_to.window(ventana_original_2)
+
+                    #comprueba si la URL ha cambiado
+                    if url_original_2 != driver.current_url:
+                        driver.back()
 
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
@@ -314,7 +341,6 @@ def crear_carpeta_selenium():
                 #comprueba si la URL ha cambiado
                 if url_original != driver.current_url:
                     driver.back()
-
 
         archivos_por_curso.append(archivos)
         driver.get("https://aules.edu.gva.es/fp/my/")
