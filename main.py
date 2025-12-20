@@ -286,8 +286,37 @@ def crear_carpeta_selenium():
 
         for link_seccion in links_secciones:
             driver.get(link_seccion)
-            actividades = driver.find_elements(By.CSS_SELECTOR,"div.activityname a")
 
+            #detectar archivos
+            fuera_de_actividades = driver.find_elements(By.CSS_SELECTOR, "div.no-overflow a")
+            links_fuera_de_actividades = [
+                a.get_attribute("href")
+                for a in fuera_de_actividades
+                if a.get_attribute("href")
+            ]
+            for link_fuera_de_actividad in links_fuera_de_actividades:
+                ventana_original = driver.current_window_handle
+                url_original = driver.current_url
+
+                driver.get(link_fuera_de_actividad)
+
+                # detecta los headers
+                nombre_archivo = nombre_desde_headers(link_fuera_de_actividad, session)
+                if nombre_archivo:
+                    print(nombre_archivo)
+                    archivos.append(nombre_archivo)
+
+                 # comprueba si estoy en una pestaña/ventana diferente para retroceder
+                if driver.current_window_handle != ventana_original:
+                    driver.close()
+                    driver.switch_to.window(ventana_original)
+
+                # comprueba si la URL ha cambiado
+                if url_original != driver.current_url:
+                    driver.back()
+
+            #detectar actividades
+            actividades = driver.find_elements(By.CSS_SELECTOR, "div.activityname a")
             links_actividades = [
                 a.get_attribute("href")
                 for a in actividades
@@ -332,6 +361,9 @@ def crear_carpeta_selenium():
                     #comprueba si la URL ha cambiado
                     if url_original_2 != driver.current_url:
                         driver.back()
+
+                #detectar mas recursos de las actividades
+
 
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
