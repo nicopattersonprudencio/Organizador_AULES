@@ -363,7 +363,32 @@ def crear_carpeta_selenium():
                         driver.back()
 
                 #detectar mas recursos de las actividades
+                recursos_2 = driver.find_elements(By.CSS_SELECTOR, "div.fileuploadsubmission a")
+                links_recursos_2 = [
+                    a.get_attribute("href")
+                    for a in recursos_2
+                    if a.get_attribute("href")
+                ]
 
+                for link_recurso_2 in links_recursos_2:
+                    ventana_original_3 = driver.current_window_handle
+                    url_original_3 = driver.current_url
+
+                    driver.get(link_recurso_2)
+                    # detecta los headers de los archivos que son actividades
+                    nombre_archivo = nombre_desde_headers(link_recurso_2, session)
+                    if nombre_archivo:
+                        print(nombre_archivo)
+                        archivos.append(nombre_archivo)
+
+                    # comprueba si estoy en una pestaña/ventana diferente para retroceder
+                    if driver.current_window_handle != ventana_original_3:
+                        driver.close()
+                        driver.switch_to.window(ventana_original_3)
+
+                    # comprueba si la URL ha cambiado
+                    if url_original_3 != driver.current_url:
+                        driver.back()
 
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
