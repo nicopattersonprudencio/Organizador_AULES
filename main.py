@@ -390,6 +390,34 @@ def crear_carpeta_selenium():
                     if url_original_3 != driver.current_url:
                         driver.back()
 
+                #detectar recursos_3
+                recursos_3 = driver.find_elements(By.CSS_SELECTOR, "div.fp-filename-icon a")
+                links_recursos_3 = [
+                    a.get_attribute("href")
+                    for a in recursos_3
+                    if a.get_attribute("href")
+                ]
+
+                for link_recurso_3 in links_recursos_3:
+                    ventana_original_4 = driver.current_window_handle
+                    url_original_4 = driver.current_url
+
+                    driver.get(link_recurso_3)
+                    # detecta los headers de los archivos que son actividades
+                    nombre_archivo = nombre_desde_headers(link_recurso_3, session)
+                    if nombre_archivo:
+                        print(nombre_archivo)
+                        archivos.append(nombre_archivo)
+
+                    # comprueba si estoy en una pestaña/ventana diferente para retroceder
+                    if driver.current_window_handle != ventana_original_4:
+                        driver.close()
+                        driver.switch_to.window(ventana_original_4)
+
+                    # comprueba si la URL ha cambiado
+                    if url_original_4 != driver.current_url:
+                        driver.back()
+
                 #comprueba si estoy en una pestaña/ventana diferente para retroceder
                 if driver.current_window_handle != ventana_original:
                     driver.close()
