@@ -14,6 +14,7 @@ from urllib.parse import unquote
 import tempfile
 import re
 import requests
+from pathlib import Path
 
 def limpiar_ventana():
     """Elimina todos los widgets actuales"""
@@ -269,8 +270,15 @@ def crear_carpeta_selenium():
         #print(name)
         course_list.append((name, link))
 
-    archivos_por_curso = []
+    """Identifica el nombre del grado"""
+    nombre_grado = ""
+    for curso in course_list:
+        if "TUTORIA" in curso[0]:
+            nombre_grado = curso[0].replace("TUTORIA", "").strip()
+            break
+
     """Recorre cada curso"""
+    archivos_por_curso = []
     for name, link in course_list:
         archivos = []
         print("\nEntrando en:", name)
@@ -429,6 +437,15 @@ def crear_carpeta_selenium():
 
         archivos_por_curso.append(archivos)
         driver.get("https://aules.edu.gva.es/fp/my/")
+
+    """Creando la carpeta en el escritorio"""
+    ruta_escritorio = Path(r"C:\Users\nicop\OneDrive\Escritorio")
+    nueva_carpeta = ruta_escritorio / nombre_grado
+
+    nueva_carpeta.mkdir(exist_ok=True)
+
+    """Creando subcarpetas de cada asignatura"""
+
 
 SERVICE = "app"
 ACCOUNT = "usuario"
